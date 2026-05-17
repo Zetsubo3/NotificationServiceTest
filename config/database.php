@@ -181,4 +181,6 @@ return [
 
     ],
 
+    'batch_chunk_size' => 500
+
 ];
