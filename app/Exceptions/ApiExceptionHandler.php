@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Exceptions\Recipients\DuplicateRecipientsException;
 use App\Exceptions\Recipients\NoValidRecipientsException;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -48,6 +49,10 @@ class ApiExceptionHandler
             ];
         }
 
+        if ($e instanceof DuplicateRecipientsException) {
+            $response['data'] = ['duplicate_recipient_ids' => $e->getDuplicateIds()];
+        }
+
         if ($e instanceof ValidationException) {
             $response['message'] = 'The given data was invalid.';
             $response['errors'] = $e->errors();
@@ -68,14 +73,15 @@ class ApiExceptionHandler
             $e instanceof NoValidRecipientsException => 'NO_VALID_RECIPIENTS',
             $e instanceof BadRequestHttpException => 'BAD_REQUEST',
             $e instanceof AuthenticationException,
-                $e instanceof UnauthorizedHttpException => 'UNAUTHORIZED',
+            $e instanceof UnauthorizedHttpException => 'UNAUTHORIZED',
             $e instanceof AccessDeniedHttpException => 'FORBIDDEN',
             $e instanceof NotFoundHttpException => 'NOT_FOUND',
             $e instanceof MethodNotAllowedHttpException => 'METHOD_NOT_ALLOWED',
             $e instanceof ConflictHttpException => 'CONFLICT',
             $e instanceof UnprocessableEntityHttpException,
-                $e instanceof ValidationException => 'VALIDATION_ERROR',
+            $e instanceof ValidationException => 'VALIDATION_ERROR',
             $e instanceof TooManyRequestsHttpException => 'TOO_MANY_REQUESTS',
+            $e instanceof DuplicateRecipientsException => 'DUPLICATE_RECIPIENTS',
             default => 'INTERNAL_SERVER_ERROR',
         };
     }
