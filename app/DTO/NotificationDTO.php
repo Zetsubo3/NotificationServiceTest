@@ -17,21 +17,23 @@ class NotificationDTO
         public readonly int $attempts,
         public readonly string $createdAt,
         public readonly string $updatedAt,
+        public readonly array $statusLogs = [],
     ) {}
 
-    public static function fromModel(Notification $notification): self
+    public static function fromArray(array $data, array $statusLogs = []): self
     {
         return new self(
-            id: $notification->id,
-            recipientId: $notification->recipient_id,
-            channel: $notification->channel,
-            priority: $notification->priority,
-            message: $notification->message,
-            status: $notification->status,
-            externalId: $notification->external_id,
-            attempts: $notification->attempts,
-            createdAt: $notification->created_at->toISOString(),
-            updatedAt: $notification->updated_at->toISOString(),
+            id: $data['id'],
+            recipientId: $data['recipient_id'],
+            channel: $data['channel'],
+            priority: $data['priority'],
+            message: $data['message'],
+            status: $data['status'],
+            externalId: $data['external_id'] ?? null,
+            attempts: $data['attempts'],
+            createdAt: $data['created_at'],
+            updatedAt: $data['updated_at'],
+            statusLogs: $statusLogs,
         );
     }
 

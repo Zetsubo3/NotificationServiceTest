@@ -4,10 +4,12 @@ namespace App\Repositories;
 
 use App\Contracts\Repositories\NotificationRepositoryInterface;
 use App\DTO\NotificationDTO;
+use App\DTO\NotificationStatusLogDTO;
 use App\DTO\PaginatedResponseDTO;
 use App\DTO\PaginationDTO;
 use App\Filters\NotificationFilter;
 use App\Models\Notification;
+use App\Models\NotificationStatusLog;
 
 class NotificationRepository implements NotificationRepositoryInterface
 {
@@ -43,16 +45,49 @@ class NotificationRepository implements NotificationRepositoryInterface
 
             Notification::query()->insert($notificationsData);
 
-            // получаем созданные записи для этого чанка
+            // select для получения всех созданных уведомлений
             $models = Notification::query()
                 ->whereIn('recipient_id', $chunk)
                 ->where('created_at', $now)
                 ->get();
 
-            $allNotifications = array_merge(
-                $allNotifications,
-                $models->map(fn($model) => NotificationDTO::fromModel($model))->toArray()
-            );
+            // готовим данные для логов
+            $statusLogsData = [];
+            foreach ($models as $model) {
+                $statusLogsData[] = [
+                    'notification_id' => $model->id,
+                    'status' => Notification::STATUS_QUEUED,
+                    'metadata' => json_encode(['queue' => $priority === 'high' ? 'transactional' : 'marketing']),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            NotificationStatusLog::query()->insert($statusLogsData);
+
+            foreach ($models as $model) {
+                $statusLogDTOs = [
+                    NotificationStatusLogDTO::fromArray([
+                        'status' => Notification::STATUS_QUEUED,
+                        'metadata' => ['queue' => $priority === 'high' ? 'transactional' : 'marketing'],
+                        'created_at' => $now->toISOString(),
+                    ])
+                ];
+
+                $notificationData = [
+                    'id' => $model->id,
+                    'recipient_id' => $model->recipient_id,
+                    'channel' => $model->channel,
+                    'priority' => $model->priority,
+                    'message' => $model->message,
+                    'status' => $model->status,
+                    'external_id' => $model->external_id,
+                    'attempts' => $model->attempts,
+                    'created_at' => $model->created_at->toISOString(),
+                    'updated_at' => $model->updated_at->toISOString(),
+                ];
+
+                $allNotifications[] = NotificationDTO::fromArray($notificationData, $statusLogDTOs);
+            }
         }
 
         return $allNotifications;
@@ -60,12 +95,14 @@ class NotificationRepository implements NotificationRepositoryInterface
 
     public function getSubscriberNotifications(int $recipientId, array $filterParams): PaginatedResponseDTO
     {
-        $query = Notification::query()->where('recipient_id', $recipientId);
+        // подгружаем статус логи
+        $query = Notification::with('statusLogs')
+            ->where('recipient_id', $recipientId);
 
         $query = $this->notificationFilter->apply($query, $filterParams);
 
-        $perPage = $filterParams['count'];
-        $page = $filterParams['page'];
+        $perPage = $filterParams['count'] ?? 15;
+        $page = $filterParams['page'] ?? 1;
 
         $paginator = $query->paginate(perPage: $perPage, page: $page);
 
@@ -88,17 +125,29 @@ class NotificationRepository implements NotificationRepositoryInterface
      */
     private function mapToDTO(Notification $notification): NotificationDTO
     {
-        return new NotificationDTO(
-            id: $notification->id,
-            recipientId: $notification->recipient_id,
-            channel: $notification->channel,
-            priority: $notification->priority,
-            message: $notification->message,
-            status: $notification->status,
-            externalId: $notification->external_id,
-            attempts: $notification->attempts,
-            createdAt: $notification->created_at->toISOString(),
-            updatedAt: $notification->updated_at->toISOString(),
+        // Преобразуем статус логи в DTO
+        $statusLogs = $notification->statusLogs->map(
+            fn($log) => NotificationStatusLogDTO::fromArray([
+                'status' => $log->status,
+                'metadata' => $log->metadata,
+                'created_at' => $log->created_at->toISOString(),
+            ])
+        )->toArray();
+
+        return NotificationDTO::fromArray(
+            data: [
+                'id' => $notification->id,
+                'recipient_id' => $notification->recipient_id,
+                'channel' => $notification->channel,
+                'priority' => $notification->priority,
+                'message' => $notification->message,
+                'status' => $notification->status,
+                'external_id' => $notification->external_id,
+                'attempts' => $notification->attempts,
+                'created_at' => $notification->created_at->toISOString(),
+                'updated_at' => $notification->updated_at->toISOString(),
+            ],
+            statusLogs: $statusLogs
         );
     }
 }

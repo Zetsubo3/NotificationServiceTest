@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('notification_status_log', function (Blueprint $table) {
+        Schema::create('notification_status_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('notification_id');
             $table->enum('status', ['queued', 'sent', 'delivered', 'failed']);
@@ -28,6 +28,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('notification_status_log');
+        Schema::dropIfExists('notification_status_logs');
     }
 };

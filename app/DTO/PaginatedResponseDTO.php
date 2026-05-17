@@ -6,10 +6,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PaginatedResponseDTO
 {
-    /**
-     * @param array $items
-     * @param PaginationDTO $pagination
-     */
     public function __construct(
         public readonly array $items,
         public readonly PaginationDTO $pagination,
