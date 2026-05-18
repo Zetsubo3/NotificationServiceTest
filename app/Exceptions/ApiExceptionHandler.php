@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use App\Exceptions\Recipients\DuplicateRecipientsException;
 use App\Exceptions\Recipients\NoValidRecipientsException;
+use App\Exceptions\Recipients\NoValidRecipientsWithDuplicatesException;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -58,6 +59,13 @@ class ApiExceptionHandler
             $response['errors'] = $e->errors();
         }
 
+        if ($e instanceof NoValidRecipientsWithDuplicatesException) {
+            $response['data'] = [
+                'invalid_recipient_ids' => $e->getInvalidIds(),
+                'duplicate_recipient_ids' => $e->getDuplicateIds(),
+            ];
+        }
+
         return response()->json($response, $statusCode);
     }
 
@@ -72,6 +80,7 @@ class ApiExceptionHandler
         return match (true) {
             $e instanceof NoValidRecipientsException => 'NO_VALID_RECIPIENTS',
             $e instanceof BadRequestHttpException => 'BAD_REQUEST',
+            $e instanceof NoValidRecipientsWithDuplicatesException => 'NO_VALID_RECIPIENTS_WITH_DUPLICATES',
             $e instanceof AuthenticationException,
             $e instanceof UnauthorizedHttpException => 'UNAUTHORIZED',
             $e instanceof AccessDeniedHttpException => 'FORBIDDEN',

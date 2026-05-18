@@ -1,0 +1,145 @@
+{
+  "info": {
+    "_postman_id": "3d46426c-0acd-4ec1-b730-e23948b8fc44",
+    "name": "NotificatonsCollection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47354520",
+    "_collection_link": "https://go.postman.co/collection/47354520-3d46426c-0acd-4ec1-b730-e23948b8fc44?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Массовая отправка сообщений",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {
+          "accept": true
+        }
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "cm2si58ZCgxnnmLeaXvWV9EQNAUes4uArJnezG4j13999a98",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"channel\": \"email\",                                            // Канал отправки: \"email\" или \"sms\"\r\n    \"message\": \"Welcome to our service! Enjoy your discount 20%\",  // Текст сообщения (макс. 1000 символов)\r\n    \"recipient_ids\": [1,2,3,4,5],                                     // Массив ID получателей (мин. 1, макс. 10000)\r\n    \"priority\": \"high\"                                             // Приоритет: \"high\" (транзакционное) или \"low\" (маркетинговое). По умолчанию \"low\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8001/api/send",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "api",
+            "send"
+          ]
+        },
+        "description": "###### Эндпоинт: `POST /api/send`\n\n###### Авторизация: Bearer Token (Sanctum)\n\n###### Параметры запроса (JSON Body):\n\n| Параметр | Тип | Обязательный | Описание |\n| --- | --- | --- | --- |\n| channel | string | Да | Канал отправки: \"email\" или \"sms\" |\n| message | string | Да | Текст сообщения. Максимум 1000 символов |\n| recipient_ids | array | Да | Массив ID получателей. Минимум 1, максимум 10000 элементов |\n| recipient_ids.\\* | integer | Да | Каждый ID получателя должен быть положительным целым числом |\n| priority | string | Нет | Приоритет: \"high\" (транзакционное) или \"low\" (маркетинговое). По умолчанию \"low\" |\n\n###### Пример запроса:\n\n``` json\n{\n    \"channel\": \"email\",\n    \"message\": \"Welcome to our service! Enjoy your discount 20%\",\n    \"recipient_ids\": [1, 2, 3, 4, 5],\n    \"priority\": \"high\"\n}\n\n ```\n\n###### Пример ответа (успех):\n\n``` json\n{\n    \"success\": true,\n    \"data\": {\n        \"total_requested\": 5,\n        \"total_invalid\": 0,\n        \"total_duplicates\": 0,\n        \"total_queued\": 5,\n        \"invalid_recipient_ids\": [],\n        \"duplicate_recipient_ids\": []\n    },\n    \"message\": \"Notifications have been queued successfully\",\n    \"error_code\": null\n}\n\n ```\n\n###### Пример ответа (частичный успех):\n\n_\\*Реализована гибкая системы. Если в запросе есть инвалидные пользователи, или пользователи для которых, текущее сообщение будет дубликатом - дальнейшая отправка сообщений для этих пользователей будет остановлена. Id таких пользователей вернется в ответе._\n\n``` json\n{\n    \"success\": true,\n    \"data\": {\n        \"total_requested\": 5,\n        \"total_invalid\": 1,\n        \"total_duplicates\": 2,\n        \"total_queued\": 2,\n        \"invalid_recipient_ids\": [99],\n        \"duplicate_recipient_ids\": [1, 2]\n    },\n    \"message\": \"Notifications have been queued successfully\",\n    \"error_code\": null\n}\n\n ```\n\n###### Пример ответа (пользователи не найдены):\n\n_\\*Если в запросе только невалидные пользователи._\n\n``` json\n{\n    \"success\": false,\n    \"data\": {\n        \"invalid_recipient_ids\": [\n            5\n        ]\n    },\n    \"message\": \"No valid recipients found\",\n    \"error_code\": \"NO_VALID_RECIPIENTS\"\n}\n\n ```\n\n###### Пример ответа (все запрошенные получатели - дубликаты):\n\n_\\*Если в запросе только пользователи, для которых сообщение является дублем за последнюю минуту._\n\n``` json\n{\n    \"success\": false,\n    \"data\": {\n        \"duplicate_recipient_ids\": [\n            5\n        ]\n    },\n    \"message\": \"Duplicate notifications detected\",\n    \"error_code\": \"DUPLICATE_RECIPIENTS\"\n}\n\n ```\n\n###### Пример ответа (все запрошенные получатели - дубликаты или не найдены):\n\n_\\*Если в запросе только невалидные пользователи, или пользователи для которых сообщение является дублем за последнюю минуту._\n\n``` json\n{\n    \"success\": false,\n    \"data\": {\n        \"invalid_recipient_ids\": [\n            999\n        ],\n        \"duplicate_recipient_ids\": [\n            3,\n            4\n        ]\n    },\n    \"message\": \"No valid recipients found\",\n    \"error_code\": \"NO_VALID_RECIPIENTS_WITH_DUPLICATES\"\n}\n\n ```\n\n###### Пример ответа (ошибка авторизации):\n\n``` json\n{\n    \"success\": false,\n    \"data\": null,\n    \"message\": \"Not authenticated\",\n    \"error_code\": \"UNAUTHORIZED\"\n}\n\n ```\n\n###### Пример ответа (превышен лимит запросов):\n\n_\\*Авторизованый пользователь может отправить не более 10 запросов в минуту на отправку уведомлений_\n\n``` json\n{\n    \"success\": false,\n    \"data\": null,\n    \"message\": \"There are too many requests. Try again later\",\n    \"error_code\": \"RATE_LIMIT_EXCEEDED\",\n    \"retry_after\": 45\n}\n\n ```\n\n###### Пример ответа (ошибка валидации):\n\n``` json\n{\n    \"success\": false,\n    \"data\": {\n        \"errors\": {\n            \"channel\": [\"The channel must be either \\\"sms\\\" or \\\"email\\\".\"]\n        }\n    },\n    \"message\": \"The given data was invalid.\",\n    \"error_code\": \"VALIDATION_ERROR\"\n}\n\n ```\n\n| Результат | Http статус |\n| --- | --- |\n| Успех | 202 |\n| Частичный успех | 202 |\n| Пользователи не найдены | 404 |\n| Все запрошенные получатели - дубликаты | 409 |\n| Все запрошенные получатели - дубликаты или не найдены | 409 |\n| Ошибка авторизации | 401 |\n| Превышен лимит запросов | 429 |\n| Ошибка валидации | 422 |"
+      },
+      "response": []
+    },
+    {
+      "name": "Получить сообщения",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {
+          "accept": true
+        }
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "cm2si58ZCgxnnmLeaXvWV9EQNAUes4uArJnezG4j13999a98",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/api/history/2?page=1&count=10",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "api",
+            "history",
+            "2"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Пагинация. Текущая страница. Инт. Необязательно. Дефолт 1. Нормализовано"
+            },
+            {
+              "key": "count",
+              "value": "10",
+              "description": "Пагинация. Кол-во на странице. Инт. Необязательно. Дефолт 10. Нормализовано"
+            },
+            {
+              "key": "status",
+              "value": "failed",
+              "description": "Фильтрация по статусу. Енам: queued, sent, delivered, failed. Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "channel",
+              "value": "email",
+              "description": "Фильтрация по каналу. Енам: email, sms. Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "priority",
+              "value": "high",
+              "description": "Фильтрация по приоритету. Енам: high, low. Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "created_at_sort",
+              "value": "false",
+              "description": "Сортировка по дате. Енам: (0, false, desc), (1, true, asc). Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "###### Эндпоинт: GET /api/history/{recipientId}\n\n###### Авторизация: Bearer Token (Sanctum)\n\n###### Параметры URL\n\n| Параметр | Тип | Обязательный | Описание |\n| --- | --- | --- | --- |\n| recipientId | integer | Да | ID получателя |\n\n###### Get параметры запроса\n\n| Параметр | Тип | Обязательный | Описание |\n| --- | --- | --- | --- |\n| page | integer | Нет | Номер страницы пагинации. По умолчанию 1 |\n| count | integer | Нет | Количество записей на странице. Максимум 100. По умолчанию 15 |\n| status | enum:string | Нет | Фильтр по статусу: queued, sent, delivered, failed |\n| channel | enum:string | Нет | Фильтр по каналу: email, sms |\n| priority | enum:string | Нет | Фильтр по приоритету: high, low |\n| created_at_sort | string/boolean | Нет | Сортировка по дате создания. Форматы: asc, desc, true (asc), false (desc), 1 (asc), 0 (desc) |\n\n###### Пример запроса:\n\n```\nGET /api/history/2?page=1&count=1&status=delivered&channel=email&created_at_sort=asc\n\n ```\n\n###### Пример ответа (успех):\n\n``` json\n{\n    \"success\": true,\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": 101,\n                \"recipient_id\": 2,\n                \"channel\": \"email\",\n                \"priority\": \"high\",\n                \"message\": \"Your verification code is 123456\",\n                \"status\": \"delivered\",\n                \"external_id\": \"email_abc-123-def\",\n                \"attempts\": 1,\n                \"created_at\": \"2026-05-18T10:00:00.000000Z\",\n                \"updated_at\": \"2026-05-18T10:00:15.000000Z\",\n                \"status_history\": [\n                    {\n                        \"status\": \"delivered\",\n                        \"created_at\": \"2026-05-18T10:00:15.000000Z\",\n                        \"metadata\": {\n                            \"delivered_at\": \"2026-05-18T10:00:15.000000Z\"\n                        }\n                    },\n                    {\n                        \"status\": \"sent\",\n                        \"created_at\": \"2026-05-18T10:00:05.000000Z\",\n                        \"metadata\": {\n                            \"external_id\": \"email_abc-123-def\",\n                            \"attempts\": 1\n                        }\n                    },\n                    {\n                        \"status\": \"queued\",\n                        \"created_at\": \"2026-05-18T10:00:00.000000Z\",\n                        \"metadata\": {\n                            \"queue\": \"transactional\"\n                        }\n                    }\n                ]\n            }\n        ],\n        \"pagination\": {\n            \"current_page\": 1,\n            \"last_page\": 25,\n            \"per_page\": 1,\n            \"total\": 25\n        }\n    },\n    \"message\": \"Notifications history retrieved successfully\",\n    \"error_code\": null\n}\n\n ```\n\n###### Пример ответа (пустая история):\n\n``` json\n{\n    \"success\": true,\n    \"data\": {\n        \"data\": [],\n        \"pagination\": {\n            \"current_page\": 1,\n            \"last_page\": 1,\n            \"per_page\": 15,\n            \"total\": 0\n        }\n    },\n    \"message\": \"Notifications history retrieved successfully\",\n    \"error_code\": null\n}\n\n ```\n\n###### Пример ответа (получатель не найден):\n\n``` json\n{\n    \"success\": false,\n    \"data\": null,\n    \"message\": \"Recipient not found\",\n    \"error_code\": \"NOT_FOUND\"\n}\n\n ```\n\n###### Пример ответа (ошибка авторизации):\n\n``` json\n{\n    \"success\": false,\n    \"data\": null,\n    \"message\": \"Not authenticated\",\n    \"error_code\": \"UNAUTHORIZED\"\n}\n\n ```\n\n###### Пример ответа (превышен лимит запросов):\n\n_\\*Авторизованый пользователь может отправить не более 60 запросов в минуту на получение данных об уведомлениях получателя_\n\n``` json\n{\n    \"success\": false,\n    \"data\": null,\n    \"message\": \"There are too many requests. Try again later\",\n    \"error_code\": \"RATE_LIMIT_EXCEEDED\",\n    \"retry_after\": 15\n}\n\n ```\n\n| **Результат** | Http статус |\n| --- | --- |\n| Успех | 200 |\n| Пустая история | 200 |\n| Получатель не найден | 404 |\n| Ошибка авторизации | 401 |\n| Превышен лимит запросов | 429 |"
+      },
+      "response": []
+    }
+  ]
+}

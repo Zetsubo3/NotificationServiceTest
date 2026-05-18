@@ -11,6 +11,7 @@ use App\DTO\PaginatedResponseDTO;
 use App\DTO\SendNotificationDTO;
 use App\Exceptions\Recipients\DuplicateRecipientsException;
 use App\Exceptions\Recipients\NoValidRecipientsException;
+use App\Exceptions\Recipients\NoValidRecipientsWithDuplicatesException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class NotificationService implements NotificationServiceInterface
@@ -30,11 +31,6 @@ class NotificationService implements NotificationServiceInterface
         $existingIds = $this->recipientRepository->findExistingIds($uniqueIds);
         $invalidIds = array_values(array_diff($uniqueIds, $existingIds));
 
-        // если все айди невалидны - ошибка
-        if (empty($existingIds)) {
-            throw new NoValidRecipientsException($invalidIds);
-        }
-
         // проверяем дубли в редисе (только для существующих)
         $duplicateIds = [];
         $validIds = [];
@@ -47,8 +43,18 @@ class NotificationService implements NotificationServiceInterface
             }
         }
 
-        // если нет ни одного нового получателя (все дубликаты) - ошибка
+        // если все айди невалидны - ошибка
+        if (empty($existingIds)) {
+            throw new NoValidRecipientsException($invalidIds);
+        }
+
+        // если нет ни одного нового получателя (все дубликаты)
         if (empty($validIds)) {
+            // Если есть ещё и невалидные → комбинированное исключение
+            if (!empty($invalidIds)) {
+                throw new NoValidRecipientsWithDuplicatesException($invalidIds, $duplicateIds);
+            }
+            // Иначе только дубликаты
             throw new DuplicateRecipientsException($duplicateIds);
         }
 
