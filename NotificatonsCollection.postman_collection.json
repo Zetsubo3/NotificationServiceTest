@@ -1,0 +1,143 @@
+{
+  "info": {
+    "_postman_id": "3d46426c-0acd-4ec1-b730-e23948b8fc44",
+    "name": "NotificatonsCollection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47354520",
+    "_collection_link": "https://go.postman.co/collection/47354520-3d46426c-0acd-4ec1-b730-e23948b8fc44?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Массовая отправка сообщений",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {
+          "accept": true
+        }
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "cm2si58ZCgxnnmLeaXvWV9EQNAUes4uArJnezG4j13999a98",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"channel\": \"email\",                                            // Канал отправки: \"email\" или \"sms\"\r\n    \"message\": \"Welcome to our service! Enjoy your discount 20%\",  // Текст сообщения (макс. 1000 символов)\r\n    \"recipient_ids\": [1, 2, 3, 4, 5],                                       // Массив ID получателей (мин. 1, макс. 10000)\r\n    \"priority\": \"high\"                                             // Приоритет: \"high\" (транзакционное) или \"low\" (маркетинговое). По умолчанию \"low\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8001/api/send",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "api",
+            "send"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Получить сообщения",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {
+          "accept": true
+        }
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "cm2si58ZCgxnnmLeaXvWV9EQNAUes4uArJnezG4j13999a98",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/api/history/2?page=1&count=10",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8001",
+          "path": [
+            "api",
+            "history",
+            "2"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Пагинация. Текущая страница. Инт. Необязательно. Дефолт 1. Нормализовано"
+            },
+            {
+              "key": "count",
+              "value": "10",
+              "description": "Пагинация. Кол-во на странице. Инт. Необязательно. Дефолт 10. Нормализовано"
+            },
+            {
+              "key": "status",
+              "value": "failed",
+              "description": "Фильтрация по статусу. Енам: queued, sent, delivered, failed. Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "channel",
+              "value": "email",
+              "description": "Фильтрация по каналу. Енам: email, sms. Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "priority",
+              "value": "high",
+              "description": "Фильтрация по приоритету. Енам: high, low. Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "created_at_sort",
+              "value": "false",
+              "description": "Сортировка по дате. Енам: (0, false, desc), (1, true, asc). Необязательно. Нормализовано",
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
