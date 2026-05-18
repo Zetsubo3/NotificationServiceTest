@@ -31,6 +31,43 @@ return [
 
     'connections' => [
 
+        'rabbitmq' => [
+            'driver' => 'rabbitmq',
+            'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+            'port' => env('RABBITMQ_PORT', 5672),
+            'vhost' => env('RABBITMQ_VHOST', '/'),
+            'login' => env('RABBITMQ_LOGIN', 'guest'),
+            'password' => env('RABBITMQ_PASSWORD', 'guest'),
+            'queue' => env('RABBITMQ_QUEUE', 'default'),
+            'exchange' => [
+                'name' => env('RABBITMQ_EXCHANGE', 'notifications_exchange'),
+                'type' => 'direct',
+                'durable' => true,
+            ],
+            'queues' => [
+                'high' => [
+                    'name' => 'transactional_notifications',
+                    'durable' => true,
+                    'priority' => 10,
+                ],
+                'low' => [
+                    'name' => 'marketing_notifications',
+                    'durable' => true,
+                    'priority' => 0,
+                ],
+            ],
+            'options' => [
+                'ssl_options' => [
+                    'verify_peer' => env('RABBITMQ_SSL_VERIFY_PEER', true),
+                    'verify_peer_name' => env('RABBITMQ_SSL_VERIFY_PEER_NAME', true),
+                    'allow_self_signed' => env('RABBITMQ_SSL_ALLOW_SELF_SIGNED', false),
+                ],
+                'queue' => [
+                    'durable' => true,
+                ],
+            ],
+        ],
+
         'sync' => [
             'driver' => 'sync',
         ],

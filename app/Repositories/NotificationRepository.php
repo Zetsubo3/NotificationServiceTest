@@ -96,8 +96,9 @@ class NotificationRepository implements NotificationRepositoryInterface
     public function getSubscriberNotifications(int $recipientId, array $filterParams): PaginatedResponseDTO
     {
         // подгружаем статус логи
-        $query = Notification::with('statusLogs')
-            ->where('recipient_id', $recipientId);
+        $query = Notification::with(['statusLogs' => function ($query) {
+            $query->orderBy('created_at', 'desc');
+        }])->where('recipient_id', $recipientId);
 
         $query = $this->notificationFilter->apply($query, $filterParams);
 
@@ -117,6 +118,98 @@ class NotificationRepository implements NotificationRepositoryInterface
         );
     }
 
+    public function incrementAttempts(int $notificationId): void
+    {
+        Notification::query()->where('id', $notificationId)->increment('attempts');
+    }
+
+    public function markAsSent(int $notificationId, string $externalId, int $attempts): void
+    {
+        $notification = Notification::query()->find($notificationId);
+
+        if (!$notification) {
+            return;
+        }
+
+        $notification->update([
+            'status' => Notification::STATUS_SENT,
+            'external_id' => $externalId,
+        ]);
+
+        NotificationStatusLog::query()->create([
+            'notification_id' => $notification->id,
+            'status' => Notification::STATUS_SENT,
+            'metadata' => [
+                'external_id' => $externalId,
+                'attempts' => $attempts
+            ],
+        ]);
+    }
+
+    public function markAsDelivered(string $externalId, string $deliveredAt): void
+    {
+        $notification = Notification::query()->where('external_id', $externalId)->first();
+
+        if (!$notification) {
+            return;
+        }
+
+        $notification->update([
+            'status' => Notification::STATUS_DELIVERED,
+        ]);
+
+        NotificationStatusLog::query()->create([
+            'notification_id' => $notification->id,
+            'status' => Notification::STATUS_DELIVERED,
+            'metadata' => ['delivered_at' => $deliveredAt],
+        ]);
+    }
+
+    public function markDeliveryFailed(string $externalId, string $error): void
+    {
+        $notification = Notification::query()->where('external_id', $externalId)->first();
+
+        if (!$notification) {
+            return;
+        }
+
+        $notification->update([
+            'status' => Notification::STATUS_FAILED,
+        ]);
+
+        NotificationStatusLog::query()->create([
+            'notification_id' => $notification->id,
+            'status' => Notification::STATUS_FAILED,
+            'metadata' => [
+                'error' => $error,
+                'source' => 'delivery_callback'
+            ],
+        ]);
+    }
+
+    public function markAsFailed(int $notificationId, string $error, int $totalAttempts): void
+    {
+        $notification = Notification::query()->find($notificationId);
+
+        if (!$notification) {
+            return;
+        }
+
+        $notification->update([
+            'status' => Notification::STATUS_FAILED,
+        ]);
+
+        NotificationStatusLog::query()->create([
+            'notification_id' => $notification->id,
+            'status' => Notification::STATUS_FAILED,
+            'metadata' => [
+                'error' => $error,
+                'total_attempts' => $totalAttempts,
+                'source' => 'job_failed'
+            ],
+        ]);
+    }
+
     /**
      * Маппинг модели в DTO
      *
@@ -125,7 +218,7 @@ class NotificationRepository implements NotificationRepositoryInterface
      */
     private function mapToDTO(Notification $notification): NotificationDTO
     {
-        // Преобразуем статус логи в DTO
+        //крутим сатус лог в ДТО
         $statusLogs = $notification->statusLogs->map(
             fn($log) => NotificationStatusLogDTO::fromArray([
                 'status' => $log->status,

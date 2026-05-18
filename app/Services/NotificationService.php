@@ -6,6 +6,7 @@ use App\Contracts\Repositories\NotificationRepositoryInterface;
 use App\Contracts\Repositories\RecipientRepositoryInterface;
 use App\Contracts\Services\DuplicateCheckerInterface;
 use App\Contracts\Services\NotificationServiceInterface;
+use App\Contracts\Services\QueueDispatcherServiceInterface;
 use App\DTO\PaginatedResponseDTO;
 use App\DTO\SendNotificationDTO;
 use App\Exceptions\Recipients\DuplicateRecipientsException;
@@ -18,6 +19,7 @@ class NotificationService implements NotificationServiceInterface
         protected readonly NotificationRepositoryInterface $notificationRepository,
         protected readonly RecipientRepositoryInterface $recipientRepository,
         protected readonly DuplicateCheckerInterface $duplicateChecker,
+        protected readonly QueueDispatcherServiceInterface $queueDispatcher,
     ) {}
 
     public function send(SendNotificationDTO $dto): array
@@ -61,6 +63,9 @@ class NotificationService implements NotificationServiceInterface
         foreach ($validIds as $recipientId) {
             $this->duplicateChecker->markAsSent($recipientId, $dto->channel, $dto->message, $dto->priority);
         }
+
+        // отправляем в джобы
+        $this->queueDispatcher->dispatchBatch($notifications, $dto->priority);
 
         return [
             'total_requested' => count($dto->recipientIds),
