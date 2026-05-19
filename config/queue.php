@@ -33,12 +33,20 @@ return [
 
         'rabbitmq' => [
             'driver' => 'rabbitmq',
-            'host' => env('RABBITMQ_HOST', '127.0.0.1'),
-            'port' => env('RABBITMQ_PORT', 5672),
-            'vhost' => env('RABBITMQ_VHOST', '/'),
-            'login' => env('RABBITMQ_LOGIN', 'guest'),
-            'password' => env('RABBITMQ_PASSWORD', 'guest'),
             'queue' => env('RABBITMQ_QUEUE', 'default'),
+            'connection' => PhpAmqpLib\Connection\AMQPStreamConnection::class,
+
+            'hosts' => [
+                [
+                    'host' => env('RABBITMQ_HOST', '127.0.0.1'),
+                    'port' => env('RABBITMQ_PORT', 5672),
+                    'user' => env('RABBITMQ_USER', 'guest'),
+                    'password' => env('RABBITMQ_PASSWORD', 'guest'),
+                    'vhost' => env('RABBITMQ_VHOST', '/'),
+                ],
+            ],
+
+            // настройки приоритетов и обменников
             'exchange' => [
                 'name' => env('RABBITMQ_EXCHANGE', 'notifications_exchange'),
                 'type' => 'direct',
@@ -56,16 +64,22 @@ return [
                     'priority' => 0,
                 ],
             ],
+
             'options' => [
                 'ssl_options' => [
+                    'cafile' => env('RABBITMQ_SSL_CAFILE', null),
+                    'local_cert' => env('RABBITMQ_SSL_LOCALCERT', null),
+                    'local_key' => env('RABBITMQ_SSL_LOCALKEY', null),
                     'verify_peer' => env('RABBITMQ_SSL_VERIFY_PEER', true),
-                    'verify_peer_name' => env('RABBITMQ_SSL_VERIFY_PEER_NAME', true),
-                    'allow_self_signed' => env('RABBITMQ_SSL_ALLOW_SELF_SIGNED', false),
+                    'passphrase' => env('RABBITMQ_SSL_PASSPHRASE', null),
                 ],
                 'queue' => [
+                    'job' => VladimirYuldashev\LaravelQueueRabbitMQ\Queue\Jobs\RabbitMQJob::class,
                     'durable' => true,
                 ],
             ],
+
+            'worker' => env('RABBITMQ_WORKER', 'default'),
         ],
 
         'sync' => [

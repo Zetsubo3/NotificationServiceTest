@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # Laravel приложение
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    networks:
+      - notification-network
+    environment:
+      - PHP_IDE_CONFIG=serverName=localhost
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=notification_service
+      - DB_USERNAME=notification_user
+      - DB_PASSWORD=secret123
+      - QUEUE_CONNECTION=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_USER=notification_user
+      - RABBITMQ_PASSWORD=secret123
+
+  # Queue worker (основные очереди high/low)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan queue:work rabbitmq --queue=high,low --sleep=3 --tries=3
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - app
+      - rabbitmq
+      - redis
+    networks:
+      - notification-network
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_USER=notification_user
+      - RABBITMQ_PASSWORD=secret123
+
+  # Delivery worker
+  delivery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan queue:work rabbitmq --queue=delivery --sleep=3 --tries=3
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - app
+      - rabbitmq
+      - redis
+    networks:
+      - notification-network
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_USER=notification_user
+      - RABBITMQ_PASSWORD=secret123
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: notification_service
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: secret123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - notification-network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: notification_user
+      RABBITMQ_DEFAULT_PASS: secret123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - notification-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - notification-network
+
+networks:
+  notification-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
