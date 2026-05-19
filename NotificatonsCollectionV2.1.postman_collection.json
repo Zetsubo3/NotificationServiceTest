@@ -20,7 +20,7 @@
           "bearer": [
             {
               "key": "token",
-              "value": "cm2si58ZCgxnnmLeaXvWV9EQNAUes4uArJnezG4j13999a98",
+              "value": "pfGpcBVvefdThWMIAOVyBc6RKL3BoEj7Ub9YoxPRdda45a88",
               "type": "string"
             }
           ]
@@ -35,7 +35,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"channel\": \"email\",                                            // Канал отправки: \"email\" или \"sms\"\r\n    \"message\": \"Welcome to our service! Enjoy your discount 20%\",  // Текст сообщения (макс. 1000 символов)\r\n    \"recipient_ids\": [1,2,3,4,5],                                     // Массив ID получателей (мин. 1, макс. 10000)\r\n    \"priority\": \"high\"                                             // Приоритет: \"high\" (транзакционное) или \"low\" (маркетинговое). По умолчанию \"low\"\r\n}",
+          "raw": "{\r\n    \"channel\": \"email\",                                            // Канал отправки: \"email\" или \"sms\"\r\n    \"message\": \"Welcome to our service! Enjoy your discount 20%\",  // Текст сообщения (макс. 1000 символов)\r\n    \"recipient_ids\": [1,2,3,4,5,6],                                // Массив ID получателей (мин. 1, макс. 10000)\r\n    \"priority\": \"high\"                                             // Приоритет: \"high\" (транзакционное) или \"low\" (маркетинговое). По умолчанию \"low\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -43,12 +43,10 @@
           }
         },
         "url": {
-          "raw": "http://localhost:8001/api/send",
-          "protocol": "http",
+          "raw": "{{base_url}}/api/send",
           "host": [
-            "localhost"
+            "{{base_url}}"
           ],
-          "port": "8001",
           "path": [
             "api",
             "send"
@@ -71,7 +69,7 @@
           "bearer": [
             {
               "key": "token",
-              "value": "cm2si58ZCgxnnmLeaXvWV9EQNAUes4uArJnezG4j13999a98",
+              "value": "pfGpcBVvefdThWMIAOVyBc6RKL3BoEj7Ub9YoxPRdda45a88",
               "type": "string"
             }
           ]
@@ -85,12 +83,10 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8001/api/history/2?page=1&count=10",
-          "protocol": "http",
+          "raw": "{{base_url}}/api/history/2",
           "host": [
-            "localhost"
+            "{{base_url}}"
           ],
-          "port": "8001",
           "path": [
             "api",
             "history",
@@ -100,12 +96,14 @@
             {
               "key": "page",
               "value": "1",
-              "description": "Пагинация. Текущая страница. Инт. Необязательно. Дефолт 1. Нормализовано"
+              "description": "Пагинация. Текущая страница. Инт. Необязательно. Дефолт 1. Нормализовано",
+              "disabled": true
             },
             {
               "key": "count",
-              "value": "10",
-              "description": "Пагинация. Кол-во на странице. Инт. Необязательно. Дефолт 10. Нормализовано"
+              "value": "2",
+              "description": "Пагинация. Кол-во на странице. Инт. Необязательно. Дефолт 10. Нормализовано",
+              "disabled": true
             },
             {
               "key": "status",
