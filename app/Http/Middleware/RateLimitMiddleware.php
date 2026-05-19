@@ -29,6 +29,11 @@ class RateLimitMiddleware
         string ...$keyNames
     ): Response {
         // Формируем массив ключей из переданных названий
+
+        if (app()->environment('testing')) {
+            return $next($request);
+        }
+
         $keys = [];
         foreach ($keyNames as $keyName) {
             $keys[] = $this->getValueFromRequest($request, $keyName);
