@@ -3,7 +3,7 @@
 
 ## Технологии
 
-- **PHP 8.2** + **Laravel 11**
+- **PHP 8.2** + **Laravel 12**
 - **PostgreSQL 15** - база данных
 - **RabbitMQ 3.12** - брокер сообщений
 - **Redis 7** - дедубликация и rate limiting
